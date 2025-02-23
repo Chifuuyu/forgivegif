@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Forgiveness Page</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f8f8f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      width: 90%;
+      max-width: 600px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .button-container {
+      margin-top: 20px;
+      transition: opacity 0.5s ease;
+    }
+    .button-container button {
+      margin: 10px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .yes-button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .no-button {
+      background-color: #f44336;
+      color: white;
+    }
+    .suggestion-section {
+      margin-top: 20px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .suggestion-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .suggestion-item {
+      width: 150px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .suggestion-item:hover {
+      transform: scale(1.05);
+    }
+    .suggestion-item img {
+      width: 150px;
+      height: 150px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+    .suggestion-item p {
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .input-box {
+      margin-top: 20px;
+      display: none;
+    }
+    .input-box input {
+      padding: 10px;
+      width: 80%;
+      max-width: 300px;
+    }
+    .input-box button {
+      padding: 10px 20px;
+      margin-left: 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .back-button {
+      padding: 10px 20px;
+      background-color: #FFA500;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      display: none;
+    }
+    .gif-container {
+      margin-top: 20px;
+    }
+    .gif-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+    }
+    /* Receipt styling */
+    #receipt {
+      display: none;
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    /* Flash overlay */
+    .flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    .flash.active {
+      opacity: 1;
+      animation: flashAnimation 0.5s forwards;
+    }
+    @keyframes flashAnimation {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    /* Mobile-friendly adjustments */
+    @media (max-width: 600px) {
+      .suggestion-item {
+        width: 120px;
+      }
+      .suggestion-item img {
+        width: 120px;
+        height: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="button-container" id="buttonContainer">
+      <button class="yes-button" onclick="yesClicked()">Yes</button>
+      <button class="no-button" onclick="noClicked()">No</button>
+    </div>
+    <div class="suggestion-section" id="suggestionSection">
+      <div class="suggestion-container" id="suggestions"></div>
+      <div class="input-box" id="inputBox">
+        <p id="selectedCategory"></p>
+        <input type="text" id="userInput" placeholder="Enter details...">
+        <button onclick="sendEmail()">Submit</button>
+      </div>
+      <button class="back-button" id="backButton" onclick="backToCategories()">Back</button>
+    </div>
+    <div class="gif-container" id="gifContainer">
+      <img id="gif_display" src="" alt="">
+    </div>
+    <div id="receipt"></div>
+  </div>
+  <div class="flash" id="flashOverlay"></div>
+  <script>
+    // Load a GIF from Tenor
+    function httpGetAsync(theUrl, callback) {
+      var xmlHttp = new XMLHttpRequest();
+      xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState === 4 && xmlHttp.status === 200) {
+          callback(xmlHttp.responseText);
+        }
+      };
+      xmlHttp.open("GET", theUrl, true);
+      xmlHttp.send(null);
+    }
+    
+    function tenorCallback_search(responsetext) {
+      var response_objects = JSON.parse(responsetext);
+      var top_gifs = response_objects["results"];
+      if (top_gifs.length > 0) {
+        var randomIndex = Math.floor(Math.random() * top_gifs.length);
+        document.getElementById("gif_display").src = top_gifs[randomIndex]["media_formats"]["gif"]["url"];
+      }
+    }
+    
+    function grab_data(search_term = "sorry") {
+      var apikey = "AIzaSyBWWo7AYx5FBmtunnDFAYt2ZHoNOUI2GUQ";
+      var clientkey = "my_test_app";
+      var lmt = 8;
+      var search_url = "https://tenor.googleapis.com/v2/search?q=" + search_term +
+                       "&key=" + apikey + "&client_key=" + clientkey + "&limit=" + lmt;
+      httpGetAsync(search_url, tenorCallback_search);
+    }
+    
+    // Flash effect on Yes click
+    function yesClicked() {
+      var flashOverlay = document.getElementById("flashOverlay");
+      flashOverlay.classList.add("active");
+      setTimeout(function() {
+        flashOverlay.classList.remove("active");
+      }, 500);
+      
+      var btnContainer = document.getElementById("buttonContainer");
+      btnContainer.style.opacity = 0;
+      setTimeout(function() {
+        btnContainer.style.display = "none";
+      }, 500);
+      
+      var suggestionSection = document.getElementById("suggestionSection");
+      suggestionSection.style.opacity = 1;
+      
+      grab_data("thank you you are the best");
+      showSuggestions();
+    }
+    
+    function noClicked() {
+      grab_data("sorry");
+    }
+    
+    function showSuggestions() {
+      let suggestions = [
+        { name: "Food", img: "food.jpg" },
+        { name: "Drink", img: "drink.jpg" },
+        { name: "Dress", img: "dress.jpg" },
+        { name: "Travel", img: "travel.jpg" },
+        { name: "Entertainment", img: "entertainment.jpg" },
+        { name: "Technology", img: "technology.jpg" }
+      ];
+    
+      let suggestionContainer = document.getElementById("suggestions");
+      suggestionContainer.innerHTML = "";
+      suggestions.forEach(suggestion => {
+        let div = document.createElement("div");
+        div.classList.add("suggestion-item");
+        div.innerHTML = `<img src="${suggestion.img}" alt="${suggestion.name}"><p>${suggestion.name}</p>`;
+        div.onclick = function() { selectCategory(suggestion.name); };
+        suggestionContainer.appendChild(div);
+      });
+    }
+    
+    function selectCategory(category) {
+      let suggestionContainer = document.getElementById("suggestions");
+      Array.from(suggestionContainer.children).forEach(child => {
+        if (!child.innerText.includes(category)) {
+          child.style.display = "none";
+        }
+      });
+      document.getElementById("selectedCategory").innerText = `Selected: ${category}`;
+      document.getElementById("inputBox").style.display = "block";
+      document.getElementById("backButton").style.display = "inline-block";
+    }
+    
+    function backToCategories() {
+      let suggestionContainer = document.getElementById("suggestions");
+      Array.from(suggestionContainer.children).forEach(child => {
+        child.style.display = "block";
+      });
+      document.getElementById("inputBox").style.display = "none";
+      document.getElementById("backButton").style.display = "none";
+    }
+    
+    // Get the user's geolocation (if permitted)
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        window.locationData = `Lat: ${position.coords.latitude}, Lon: ${position.coords.longitude}`;
+      }, (error) => {
+        console.error("Geolocation error:", error);
+        window.locationData = "Unavailable";
+      });
+    } else {
+      window.locationData = "Not supported";
+    }
+    
+    // When the user submits, send a POST to our Deno server
+    function sendEmail() {
+      let category = document.getElementById("selectedCategory").innerText.replace("Selected: ", "");
+      let details = document.getElementById("userInput").value;
+      let locationStr = window.locationData || "Unknown location";
+    
+      fetch("/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          category,
+          details,
+          location: locationStr
+        })
+      }).then(response => response.json())
+        .then(data => {
+          let receiptDiv = document.getElementById("receipt");
+          let currentDateTime = new Date().toLocaleString();
+          receiptDiv.innerHTML = `You forgave Paul on ${currentDateTime} 😉❤️`;
+          receiptDiv.style.display = "block";
+          document.getElementById("suggestionSection").style.display = "none";
+          document.getElementById("buttonContainer").style.display = "none";
+        }).catch(err => {
+          console.error("Error sending email", err);
+        });
+    }
+    
+    // Initial GIF load
+    grab_data();
+  </script>
+</body>
+</html>
